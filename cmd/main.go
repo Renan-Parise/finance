@@ -1,10 +1,9 @@
 package main
 
 import (
+	"github.com/Renan-Parise/finances/internal/container"
 	"github.com/Renan-Parise/finances/internal/db"
 	"github.com/Renan-Parise/finances/internal/handlers"
-	"github.com/Renan-Parise/finances/internal/repositories"
-	"github.com/Renan-Parise/finances/internal/usecases"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,15 +11,12 @@ import (
 func main() {
 	db.RunMigrations()
 
-	database := db.GetDB()
-
-	transactionRepo := repositories.NewTransactionrepositories(database)
-
-	transactionUseCase := usecases.NewTransactionUseCase(transactionRepo)
+	container := container.NewContainer()
 
 	router := gin.Default()
 
-	handlers.NewTransactionHandler(router, transactionUseCase)
+	handlers.NewTransactionHandler(router, container.TransactionUseCase)
+	handlers.NewCategoryHandler(router, container.CategoryUseCase)
 
 	router.Run("127.0.0.1:8180")
 }
