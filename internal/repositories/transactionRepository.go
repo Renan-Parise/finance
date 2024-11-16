@@ -26,7 +26,7 @@ func NewTransactionrepositories(db *sql.DB) Transactionrepositories {
 }
 
 func (r *transactionrepositories) Create(transaction *entities.Transaction) error {
-	query := `INSERT INTO transactions (user_id, date_added, date_edited, description, category, amount)
+	query := `INSERT INTO transactions (userId, createdAt, updatedAt, description, category, amount)
               VALUES (?, ?, ?, ?, ?, ?)`
 	stmt, err := r.db.Prepare(query)
 	if err != nil {
@@ -34,7 +34,7 @@ func (r *transactionrepositories) Create(transaction *entities.Transaction) erro
 	}
 	defer stmt.Close()
 
-	res, err := stmt.Exec(transaction.UserID, transaction.DateAdded, transaction.DateEdited,
+	res, err := stmt.Exec(transaction.UserID, transaction.CreatedAt, transaction.UpdatedAt,
 		transaction.Description, transaction.Category, transaction.Amount)
 	if err != nil {
 		return err
@@ -48,9 +48,9 @@ func (r *transactionrepositories) Create(transaction *entities.Transaction) erro
 }
 
 func (r *transactionrepositories) GetAll(userID int64) ([]*entities.Transaction, error) {
-	query := `SELECT id, user_id, date_added, date_edited, description, category, amount 
+	query := `SELECT id, userId, createdAt, updatedAt, description, category, amount 
               FROM transactions 
-              WHERE user_id = ?`
+              WHERE userId = ?`
 	rows, err := r.db.Query(query, userID)
 	if err != nil {
 		return nil, err
@@ -60,8 +60,8 @@ func (r *transactionrepositories) GetAll(userID int64) ([]*entities.Transaction,
 	var transactions []*entities.Transaction
 	for rows.Next() {
 		var transaction entities.Transaction
-		err := rows.Scan(&transaction.ID, &transaction.UserID, &transaction.DateAdded,
-			&transaction.DateEdited, &transaction.Description, &transaction.Category, &transaction.Amount)
+		err := rows.Scan(&transaction.ID, &transaction.UserID, &transaction.CreatedAt,
+			&transaction.UpdatedAt, &transaction.Description, &transaction.Category, &transaction.Amount)
 		if err != nil {
 			return nil, err
 		}
@@ -71,13 +71,13 @@ func (r *transactionrepositories) GetAll(userID int64) ([]*entities.Transaction,
 }
 
 func (r *transactionrepositories) GetByID(userID int64, id int64) (*entities.Transaction, error) {
-	query := `SELECT id, user_id, date_added, date_edited, description, category, amount 
+	query := `SELECT id, userId, createdAt, updatedAt, description, category, amount 
               FROM transactions 
-              WHERE id = ? AND user_id = ?`
+              WHERE id = ? AND userId = ?`
 	row := r.db.QueryRow(query, id, userID)
 	var transaction entities.Transaction
-	err := row.Scan(&transaction.ID, &transaction.UserID, &transaction.DateAdded,
-		&transaction.DateEdited, &transaction.Description, &transaction.Category, &transaction.Amount)
+	err := row.Scan(&transaction.ID, &transaction.UserID, &transaction.CreatedAt,
+		&transaction.UpdatedAt, &transaction.Description, &transaction.Category, &transaction.Amount)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -88,21 +88,21 @@ func (r *transactionrepositories) GetByID(userID int64, id int64) (*entities.Tra
 }
 
 func (r *transactionrepositories) Update(transaction *entities.Transaction) error {
-	query := `UPDATE transactions SET date_edited = ?, description = ?, category = ?, amount = ? 
-              WHERE id = ? AND user_id = ?`
+	query := `UPDATE transactions SET updatedAt = ?, description = ?, category = ?, amount = ? 
+              WHERE id = ? AND userId = ?`
 	stmt, err := r.db.Prepare(query)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(transaction.DateEdited, transaction.Description, transaction.Category,
+	_, err = stmt.Exec(transaction.UpdatedAt, transaction.Description, transaction.Category,
 		transaction.Amount, transaction.ID, transaction.UserID)
 	return err
 }
 
 func (r *transactionrepositories) Delete(userID int64, id int64) error {
-	query := `DELETE FROM transactions WHERE id = ? AND user_id = ?`
+	query := `DELETE FROM transactions WHERE id = ? AND userId = ?`
 	stmt, err := r.db.Prepare(query)
 	if err != nil {
 		return err

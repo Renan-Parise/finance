@@ -39,7 +39,7 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 
 	var input struct {
 		Description string  `json:"description" binding:"required"`
-		Category    string  `json:"category" binding:"required"`
+		Category    int     `json:"category" binding:"required"`
 		Amount      float64 `json:"amount" binding:"required"`
 	}
 
@@ -89,7 +89,7 @@ func (h *TransactionHandler) UpdateTransaction(c *gin.Context) {
 
 	var input struct {
 		Description string  `json:"description" binding:"required"`
-		Category    string  `json:"category" binding:"required"`
+		Category    int     `json:"category" binding:"required"`
 		Amount      float64 `json:"amount" binding:"required"`
 	}
 

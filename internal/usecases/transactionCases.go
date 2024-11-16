@@ -9,7 +9,7 @@ import (
 )
 
 type TransactionUseCase interface {
-	CreateTransaction(userID int64, description, category string, amount float64) error
+	CreateTransaction(userID int64, description string, category int, amount float64) error
 	GetTransactions(userID int64) ([]*entities.Transaction, error)
 	UpdateTransaction(transaction *entities.Transaction) error
 	DeleteTransaction(userID int64, id int64) error
@@ -25,7 +25,7 @@ func NewTransactionUseCase(tr repositories.Transactionrepositories) TransactionU
 	}
 }
 
-func (uc *transactionUseCase) CreateTransaction(userID int64, description, category string, amount float64) error {
+func (uc *transactionUseCase) CreateTransaction(userID int64, description string, category int, amount float64) error {
 	transaction := factories.NewTransaction(userID, description, category, amount)
 	return uc.transactionRepo.Create(transaction)
 }
@@ -35,7 +35,7 @@ func (uc *transactionUseCase) GetTransactions(userID int64) ([]*entities.Transac
 }
 
 func (uc *transactionUseCase) UpdateTransaction(transaction *entities.Transaction) error {
-	transaction.DateEdited = time.Now()
+	transaction.UpdatedAt = time.Now()
 	return uc.transactionRepo.Update(transaction)
 }
 

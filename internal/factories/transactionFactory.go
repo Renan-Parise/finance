@@ -6,12 +6,12 @@ import (
 	"github.com/Renan-Parise/finances/internal/entities"
 )
 
-func NewTransaction(userID int64, description string, category string, amount float64) *entities.Transaction {
+func NewTransaction(userID int64, description string, category int, amount float64) *entities.Transaction {
 	now := time.Now()
 	return &entities.Transaction{
 		UserID:      userID,
-		DateAdded:   now,
-		DateEdited:  now,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 		Description: description,
 		Category:    category,
 		Amount:      amount,
