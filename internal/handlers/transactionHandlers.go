@@ -1,4 +1,4 @@
-package http
+package handlers
 
 import (
 	"net/http"
@@ -15,7 +15,7 @@ type TransactionHandler struct {
 	transactionUseCase usecases.TransactionUseCase
 }
 
-func NewTransactionHandler(router *gin.Engine, tu usecase.TransactionUseCase) {
+func NewTransactionHandler(router *gin.Engine, tu usecases.TransactionUseCase) {
 	handler := &TransactionHandler{
 		transactionUseCase: tu,
 	}

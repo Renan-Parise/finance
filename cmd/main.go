@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/Renan-Parise/finances/internal/db"
+	"github.com/Renan-Parise/finances/internal/handlers"
 	"github.com/Renan-Parise/finances/internal/repositories"
 	"github.com/Renan-Parise/finances/internal/usecases"
 
