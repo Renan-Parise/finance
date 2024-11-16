@@ -10,6 +10,8 @@ import (
 )
 
 func main() {
+	db.RunMigrations()
+
 	database := db.GetDB()
 
 	transactionRepo := repositories.NewTransactionrepositories(database)
@@ -20,5 +22,5 @@ func main() {
 
 	handlers.NewTransactionHandler(router, transactionUseCase)
 
-	router.Run(":8080")
+	router.Run("127.0.0.1:8180")
 }
