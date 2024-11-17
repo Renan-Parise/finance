@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/Renan-Parise/finances/internal/entities"
+	"github.com/Renan-Parise/finances/internal/errors"
 )
 
 type StatisticsRepository interface {
@@ -64,7 +65,7 @@ func (r *statisticsRepository) GetMonthlyExpenses(userID int64) ([]*entities.Mon
 	`
 	rows, err := r.db.Query(query, userID)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewQueryError("Failed to get monthly expenses: " + err.Error())
 	}
 	defer rows.Close()
 
@@ -73,7 +74,7 @@ func (r *statisticsRepository) GetMonthlyExpenses(userID int64) ([]*entities.Mon
 		var ma entities.MonthlyAmount
 		err := rows.Scan(&ma.Year, &ma.Month, &ma.Total)
 		if err != nil {
-			return nil, err
+			return nil, errors.NewQueryError("Failed to scan monthly expenses: " + err.Error())
 		}
 		results = append(results, &ma)
 	}
@@ -90,7 +91,7 @@ func (r *statisticsRepository) GetMonthlyIncome(userID int64) ([]*entities.Month
 	`
 	rows, err := r.db.Query(query, userID)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewQueryError("Failed to get monthly income: " + err.Error())
 	}
 	defer rows.Close()
 
@@ -99,7 +100,7 @@ func (r *statisticsRepository) GetMonthlyIncome(userID int64) ([]*entities.Month
 		var ma entities.MonthlyAmount
 		err := rows.Scan(&ma.Year, &ma.Month, &ma.Total)
 		if err != nil {
-			return nil, err
+			return nil, errors.NewQueryError("Failed to scan monthly income: " + err.Error())
 		}
 		results = append(results, &ma)
 	}
@@ -116,7 +117,7 @@ func (r *statisticsRepository) GetCategoryMonthlyTotals(userID int64, month, yea
 	`
 	rows, err := r.db.Query(query, userID, month, year)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewQueryError("Failed to get category monthly totals: " + err.Error())
 	}
 	defer rows.Close()
 
@@ -126,7 +127,7 @@ func (r *statisticsRepository) GetCategoryMonthlyTotals(userID int64, month, yea
 		var total float64
 		err := rows.Scan(&categoryName, &total)
 		if err != nil {
-			return nil, err
+			return nil, errors.NewQueryError("Failed to scan category monthly totals: " + err.Error())
 		}
 		totals[categoryName] = total
 	}
