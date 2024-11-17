@@ -2,9 +2,9 @@ package repositories
 
 import (
 	"database/sql"
-	"errors"
 
 	"github.com/Renan-Parise/finances/internal/entities"
+	"github.com/Renan-Parise/finances/internal/errors"
 )
 
 type Transactionrepositories interface {
@@ -30,18 +30,18 @@ func (r *transactionrepositories) Create(transaction *entities.Transaction) erro
               VALUES (?, ?, ?, ?, ?, ?)`
 	stmt, err := r.db.Prepare(query)
 	if err != nil {
-		return err
+		return errors.NewQueryError("error preparing query: " + err.Error())
 	}
 	defer stmt.Close()
 
 	res, err := stmt.Exec(transaction.UserID, transaction.CreatedAt, transaction.UpdatedAt,
 		transaction.Description, transaction.Category, transaction.Amount)
 	if err != nil {
-		return err
+		return errors.NewQueryError("error executing query: " + err.Error())
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		return err
+		return errors.NewQueryError("error getting last insert ID: " + err.Error())
 	}
 	transaction.ID = id
 	return nil
@@ -53,7 +53,7 @@ func (r *transactionrepositories) GetAll(userID int64) ([]*entities.Transaction,
               WHERE userId = ?`
 	rows, err := r.db.Query(query, userID)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewQueryError("error executing query: " + err.Error())
 	}
 	defer rows.Close()
 
@@ -63,7 +63,7 @@ func (r *transactionrepositories) GetAll(userID int64) ([]*entities.Transaction,
 		err := rows.Scan(&transaction.ID, &transaction.UserID, &transaction.CreatedAt,
 			&transaction.UpdatedAt, &transaction.Description, &transaction.Category, &transaction.Amount)
 		if err != nil {
-			return nil, err
+			return nil, errors.NewQueryError("error scanning row: " + err.Error())
 		}
 		transactions = append(transactions, &transaction)
 	}
@@ -82,7 +82,7 @@ func (r *transactionrepositories) GetByID(userID int64, id int64) (*entities.Tra
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
-		return nil, err
+		return nil, errors.NewQueryError("error scanning row: " + err.Error())
 	}
 	return &transaction, nil
 }
@@ -92,7 +92,7 @@ func (r *transactionrepositories) Update(transaction *entities.Transaction) erro
               WHERE id = ? AND userId = ?`
 	stmt, err := r.db.Prepare(query)
 	if err != nil {
-		return err
+		return errors.NewQueryError("error preparing query: " + err.Error())
 	}
 	defer stmt.Close()
 
@@ -105,7 +105,7 @@ func (r *transactionrepositories) Delete(userID int64, id int64) error {
 	query := `DELETE FROM transactions WHERE id = ? AND userId = ?`
 	stmt, err := r.db.Prepare(query)
 	if err != nil {
-		return err
+		return errors.NewQueryError("error preparing query: " + err.Error())
 	}
 	defer stmt.Close()
 

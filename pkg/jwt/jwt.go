@@ -38,7 +38,7 @@ func ParseToken(tokenString string) (int64, error) {
 			} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
 				return 0, errors.New("token expired or not active yet")
 			} else {
-				return 0, errors.New("could not handle token")
+				return 0, errors.New("could not handle token. did you tried to hack us?")
 			}
 		}
 	}

@@ -19,13 +19,13 @@ func RunMigrations() {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbName := os.Getenv("DB_NAME")
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	name := os.Getenv("DB_NAME")
 
-	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
+	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, password, host, port, name)
 
 	db, err := sql.Open("mysql", dataSourceName)
 	if err != nil {
@@ -40,7 +40,7 @@ func RunMigrations() {
 
 	m, err := migrate.NewWithDatabaseInstance(
 		"file://migrations",
-		dbName,
+		name,
 		driver,
 	)
 	if err != nil {

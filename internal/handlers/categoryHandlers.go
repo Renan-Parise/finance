@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Renan-Parise/finances/internal/middlewares"
 	"github.com/Renan-Parise/finances/internal/usecases"
@@ -46,6 +47,10 @@ func (h *CategoryHandler) CreateCategory(c *gin.Context) {
 
 	err := h.categoryUseCase.CreateCategory(userID.(int64), input.Name)
 	if err != nil {
+		if strings.Contains(err.Error(), "already exists") {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

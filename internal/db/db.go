@@ -24,23 +24,22 @@ func GetDB() *sql.DB {
 			log.Fatalf("Error loading .env file: %v", err)
 		}
 
-		dbUser := os.Getenv("DB_USER")
-		dbPassword := os.Getenv("DB_PASSWORD")
-		dbHost := os.Getenv("DB_HOST")
-		dbPort := os.Getenv("DB_PORT")
-		dbName := os.Getenv("DB_NAME")
+		user := os.Getenv("DB_USER")
+		password := os.Getenv("DB_PASSWORD")
+		host := os.Getenv("DB_HOST")
+		port := os.Getenv("DB_PORT")
+		name := os.Getenv("DB_NAME")
 
 		dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
-			dbUser, dbPassword, dbHost, dbPort, dbName)
+			user, password, host, port, name)
 
-		var errDb error
-		db, errDb = sql.Open("mysql", dataSourceName)
-		if errDb != nil {
-			log.Fatalf("Could not open db: %v", errDb)
+		db, err = sql.Open("mysql", dataSourceName)
+		if err != nil {
+			log.Fatalf("Could not stabish connection to database: %v", err)
 		}
 
-		if errPing := db.Ping(); errPing != nil {
-			log.Fatalf("Could not connect to db: %v", errPing)
+		if err := db.Ping(); err != nil {
+			log.Fatalf("Could not connect to database: %v", err)
 		}
 	})
 	return db
