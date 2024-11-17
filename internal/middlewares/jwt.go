@@ -1,10 +1,12 @@
 package middlewares
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
-	"github.com/Renan-Parise/finances/pkg/jwt"
+	jwt "github.com/golang-jwt/jwt/v4"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,13 +25,34 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		userID, err := jwt.ParseToken(parts[1])
+		tokenString := parts[1]
+		secret := os.Getenv("SECRET_KEY")
+
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+
+			return []byte(secret), nil
+		})
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 
-		c.Set("user_id", userID)
-		c.Next()
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			if service, exists := claims["service"]; exists && service == "auth" {
+				c.Next()
+				return
+			}
+			if userID, ok := claims["user_id"].(float64); ok {
+				c.Set("user_id", int64(userID))
+			}
+			c.Next()
+			return
+		} else {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			return
+		}
 	}
 }
