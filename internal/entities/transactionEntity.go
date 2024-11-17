@@ -13,11 +13,11 @@ type Transaction struct {
 }
 
 type Filter struct {
-	File     string `json:"file" binding:"required"`
 	Category int    `json:"category"`
 	Search   string `json:"search"`
 	Order    string `json:"order"`
 	Field    string `json:"field"`
 	From     string `json:"from"`
+	File     string `json:"file"`
 	To       string `json:"to"`
 }
