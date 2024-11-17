@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Renan-Parise/finances/internal/entities"
 	"github.com/Renan-Parise/finances/internal/middlewares"
@@ -23,10 +25,12 @@ func NewTransactionHandler(router *gin.Engine, tu usecases.TransactionUseCase) {
 	transactions := router.Group("/transactions")
 	transactions.Use(middlewares.JWTAuthMiddleware())
 	{
+		transactions.POST("/filter", handler.FilterTransactions)
+		transactions.POST("/export", handler.ExportTransactions)
+		transactions.DELETE("/:id", handler.DeleteTransaction)
+		transactions.PUT("/:id", handler.UpdateTransaction)
 		transactions.POST("/", handler.CreateTransaction)
 		transactions.GET("/", handler.GetTransactions)
-		transactions.PUT("/:id", handler.UpdateTransaction)
-		transactions.DELETE("/:id", handler.DeleteTransaction)
 	}
 }
 
@@ -136,4 +140,47 @@ func (h *TransactionHandler) DeleteTransaction(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Transaction deleted successfully"})
+}
+
+func (h *TransactionHandler) FilterTransactions(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	var input entities.Filter
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	transactions, err := h.transactionUseCase.FilterTransactions(userID.(int64), &input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, transactions)
+}
+
+func (h *TransactionHandler) ExportTransactions(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	var input entities.Filter
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=transactions.%s", strings.ToLower(input.File)))
+	c.Writer.Header().Set("Content-Type", "application/octet-stream")
+
+	if err := h.transactionUseCase.ExportTransactions(userID.(int64), &input, c.Writer); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
 }

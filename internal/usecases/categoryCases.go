@@ -1,10 +1,9 @@
 package usecases
 
 import (
-	"time"
-
 	"github.com/Renan-Parise/finances/internal/entities"
 	"github.com/Renan-Parise/finances/internal/errors"
+	"github.com/Renan-Parise/finances/internal/factories"
 	"github.com/Renan-Parise/finances/internal/repositories"
 )
 
@@ -25,19 +24,14 @@ func NewCategoryUseCase(cr repositories.CategoryRepository) CategoryUseCase {
 func (uc *categoryUseCase) CreateCategory(userID int64, name string) error {
 	exists, err := uc.categoryRepo.ExistsByName(userID, name)
 	if err != nil {
-		return err
+		return errors.NewServiceError("error checking if category name exists: " + err.Error())
 	}
 
 	if exists {
 		return errors.NewValidationError(name, "the given category name already exists: "+name)
 	}
 
-	category := &entities.Category{
-		UserID:    userID,
-		Name:      name,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
+	category := factories.NewCategory(userID, name)
 	return uc.categoryRepo.Create(category)
 }
 
