@@ -8,12 +8,15 @@ import (
 )
 
 type StatisticsRepository interface {
-	GetTotalIncome(userID int64) (float64, error)
-	GetTotalExpenses(userID int64) (float64, error)
-	GetMostUsedCategory(userID int64) (string, error)
+	GetCategoryMonthlyTotals(userID int64, month, year int) (map[string]float64, error)
+	GetExpensesByCategory(userID int64) ([]*entities.ExpenseCategorySummary, error)
+	GetMonthlyExpensesSummary(userID int64) ([]*entities.MonthlyAmount, error)
 	GetMonthlyExpenses(userID int64) ([]*entities.MonthlyAmount, error)
 	GetMonthlyIncome(userID int64) ([]*entities.MonthlyAmount, error)
-	GetCategoryMonthlyTotals(userID int64, month, year int) (map[string]float64, error)
+	GetSpendingHeatmap(userID int64) (map[string]float64, error)
+	GetMostUsedCategory(userID int64) (string, error)
+	GetTotalExpenses(userID int64) (float64, error)
+	GetTotalIncome(userID int64) (float64, error)
 }
 
 type statisticsRepository struct {
@@ -132,4 +135,97 @@ func (r *statisticsRepository) GetCategoryMonthlyTotals(userID int64, month, yea
 		totals[categoryName] = total
 	}
 	return totals, nil
+}
+
+func (r *statisticsRepository) GetSpendingHeatmap(userID int64) (map[string]float64, error) {
+	query := `
+		SELECT DATE(createdAt) as day, ABS(SUM(amount)) as total
+		FROM transactions
+		WHERE userId = ? AND amount < 0 AND createdAt >= DATE_SUB(CURRENT_DATE, INTERVAL 11 MONTH)
+		GROUP BY DATE(createdAt)
+		ORDER BY day ASC
+	`
+	rows, err := r.db.Query(query, userID)
+	if err != nil {
+		return nil, errors.NewQueryError("Failed to get spending heatmap: " + err.Error())
+	}
+	defer rows.Close()
+
+	heatmap := make(map[string]float64)
+	for rows.Next() {
+		var day string
+		var total float64
+		err := rows.Scan(&day, &total)
+		if err != nil {
+			return nil, errors.NewQueryError("Failed to scan heatmap data: " + err.Error())
+		}
+		heatmap[day] = total
+	}
+	return heatmap, nil
+}
+
+func (r *statisticsRepository) GetMonthlyExpensesSummary(userID int64) ([]*entities.MonthlyAmount, error) {
+	query := `
+		SELECT YEAR(createdAt) as year, MONTH(createdAt) as month, ABS(SUM(amount)) as total
+		FROM transactions
+		WHERE userId = ? AND amount < 0
+		GROUP BY YEAR(createdAt), MONTH(createdAt)
+		ORDER BY year DESC, month DESC
+		LIMIT 12
+	`
+	rows, err := r.db.Query(query, userID)
+	if err != nil {
+		return nil, errors.NewQueryError("Failed to get monthly expenses summary: " + err.Error())
+	}
+	defer rows.Close()
+
+	var results []*entities.MonthlyAmount
+	for rows.Next() {
+		var ma entities.MonthlyAmount
+		err := rows.Scan(&ma.Year, &ma.Month, &ma.Total)
+		if err != nil {
+			return nil, errors.NewQueryError("Failed to scan monthly expenses summary: " + err.Error())
+		}
+		results = append(results, &ma)
+	}
+	return results, nil
+}
+
+func (r *statisticsRepository) GetExpensesByCategory(userID int64) ([]*entities.ExpenseCategorySummary, error) {
+	query := `
+		SELECT c.name, ABS(SUM(t.amount)) as total
+		FROM transactions t
+		JOIN categories c ON t.category = c.id
+		WHERE t.userId = ? AND t.amount < 0
+		GROUP BY c.name
+		ORDER BY total DESC
+	`
+	rows, err := r.db.Query(query, userID)
+	if err != nil {
+		return nil, errors.NewQueryError("Failed to get expenses by category: " + err.Error())
+	}
+	defer rows.Close()
+
+	var results []*entities.ExpenseCategorySummary
+	var totalSum float64
+
+	for rows.Next() {
+		var category string
+		var total float64
+		err := rows.Scan(&category, &total)
+		if err != nil {
+			return nil, errors.NewQueryError("Failed to scan category expenses: " + err.Error())
+		}
+		totalSum += total
+		results = append(results, &entities.ExpenseCategorySummary{
+			CategoryName: category,
+			TotalAmount:  total,
+		})
+	}
+
+	for _, result := range results {
+		result.Percentage = (result.TotalAmount / totalSum) * 100
+	}
+
+	return results, nil
 }

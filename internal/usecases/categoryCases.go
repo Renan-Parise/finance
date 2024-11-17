@@ -8,8 +8,9 @@ import (
 )
 
 type CategoryUseCase interface {
-	CreateCategory(userID int64, name string) error
 	GetCategories(userID int64) ([]*entities.Category, error)
+	CreateCategory(userID int64, name string) error
+	CreateDefaultCategories(userID int64) error
 	DeleteCategory(userID int64, id int) error
 }
 
@@ -33,6 +34,18 @@ func (uc *categoryUseCase) CreateCategory(userID int64, name string) error {
 
 	category := factories.NewCategory(userID, name)
 	return uc.categoryRepo.Create(category)
+}
+
+func (uc *categoryUseCase) CreateDefaultCategories(userID int64) error {
+	defaultCategories := []string{"Food", "Entertainment", "Transport", "Shopping", "Salary", "Travel"}
+
+	for _, categoryName := range defaultCategories {
+		category := factories.NewCategory(userID, categoryName)
+		if err := uc.categoryRepo.Create(category); err != nil {
+			return errors.NewServiceError("error creating category " + categoryName + ": " + err.Error())
+		}
+	}
+	return nil
 }
 
 func (uc *categoryUseCase) GetCategories(userID int64) ([]*entities.Category, error) {

@@ -6,13 +6,17 @@ import (
 
 	"github.com/Renan-Parise/finances/internal/entities"
 	"github.com/Renan-Parise/finances/internal/repositories"
+	"github.com/Renan-Parise/finances/internal/utils"
 )
 
 type StatisticsUseCase interface {
+	GetCategoryPercentageChanges(userID int64) ([]*entities.CategoryPercentageChange, error)
+	GetExpensesByCategory(userID int64) ([]*entities.ExpenseCategorySummary, error)
+	GetMonthlyExpensesSummary(userID int64) ([]*entities.MonthlyAmount, error)
 	GetGeneralStatistics(userID int64) (*entities.GeneralStatistics, error)
 	GetHighestExpenseMonth(userID int64) (*entities.MonthlyAmount, error)
 	GetHighestIncomeMonth(userID int64) (*entities.MonthlyAmount, error)
-	GetCategoryPercentageChanges(userID int64) ([]*entities.CategoryPercentageChange, error)
+	GetSpendingHeatmap(userID int64) (map[string]float64, error)
 }
 
 type statisticsUseCase struct {
@@ -87,7 +91,7 @@ func (uc *statisticsUseCase) GetCategoryPercentageChanges(userID int64) ([]*enti
 	}
 
 	var changes []*entities.CategoryPercentageChange
-	for name := range mergeKeys(currentTotals, previousTotals) {
+	for name := range utils.MergeKeys(currentTotals, previousTotals) {
 		currentValue := currentTotals[name]
 		previousValue := previousTotals[name]
 		var percentageChange float64
@@ -114,12 +118,14 @@ func (uc *statisticsUseCase) GetCategoryPercentageChanges(userID int64) ([]*enti
 	return changes, nil
 }
 
-func mergeKeys(maps ...map[string]float64) map[string]struct{} {
-	merged := make(map[string]struct{})
-	for _, m := range maps {
-		for key := range m {
-			merged[key] = struct{}{}
-		}
-	}
-	return merged
+func (uc *statisticsUseCase) GetSpendingHeatmap(userID int64) (map[string]float64, error) {
+	return uc.statisticsRepo.GetSpendingHeatmap(userID)
+}
+
+func (uc *statisticsUseCase) GetMonthlyExpensesSummary(userID int64) ([]*entities.MonthlyAmount, error) {
+	return uc.statisticsRepo.GetMonthlyExpenses(userID)
+}
+
+func (uc *statisticsUseCase) GetExpensesByCategory(userID int64) ([]*entities.ExpenseCategorySummary, error) {
+	return uc.statisticsRepo.GetExpensesByCategory(userID)
 }

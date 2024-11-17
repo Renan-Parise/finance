@@ -20,3 +20,9 @@ type CategoryPercentageChange struct {
 	PercentageChange float64 `json:"percentageChange"`
 	Increase         bool    `json:"increase"`
 }
+
+type ExpenseCategorySummary struct {
+	CategoryName string  `json:"categoryName"`
+	TotalAmount  float64 `json:"totalAmount"`
+	Percentage   float64 `json:"percentage"`
+}

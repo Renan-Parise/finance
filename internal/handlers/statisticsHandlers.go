@@ -21,10 +21,13 @@ func NewStatisticsHandler(router *gin.Engine, su usecases.StatisticsUseCase) {
 	statistics := router.Group("/statistics")
 	statistics.Use(middlewares.JWTAuthMiddleware())
 	{
-		statistics.GET("/general", handler.GetGeneralStatistics)
+		statistics.GET("/category-percentage", handler.GetCategoryPercentageChanges)
+		statistics.GET("/expenses-by-category", handler.GetExpensesByCategory)
+		statistics.GET("/monthly-summary", handler.GetMonthlyExpensesSummary)
 		statistics.GET("/highest-expenses", handler.GetHighestExpenseMonth)
 		statistics.GET("/highest-incomes", handler.GetHighestIncomeMonth)
-		statistics.GET("/category-percentage", handler.GetCategoryPercentageChanges)
+		statistics.GET("/spending-heatmap", handler.GetSpendingHeatmap)
+		statistics.GET("/general", handler.GetGeneralStatistics)
 	}
 }
 
@@ -100,4 +103,52 @@ func (h *StatisticsHandler) GetCategoryPercentageChanges(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, changes)
+}
+
+func (h *StatisticsHandler) GetSpendingHeatmap(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	heatmap, err := h.statisticsUseCase.GetSpendingHeatmap(userID.(int64))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, heatmap)
+}
+
+func (h *StatisticsHandler) GetMonthlyExpensesSummary(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	summary, err := h.statisticsUseCase.GetMonthlyExpensesSummary(userID.(int64))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, summary)
+}
+
+func (h *StatisticsHandler) GetExpensesByCategory(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	summary, err := h.statisticsUseCase.GetExpensesByCategory(userID.(int64))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, summary)
 }

@@ -27,6 +27,8 @@ func NewCategoryHandler(router *gin.Engine, cu usecases.CategoryUseCase) {
 		categories.GET("/", handler.GetCategories)
 		categories.DELETE("/:id", handler.DeleteCategory)
 	}
+
+	categories.POST("/default", handler.CreateDefaultCategories)
 }
 
 func (h *CategoryHandler) CreateCategory(c *gin.Context) {
@@ -95,4 +97,23 @@ func (h *CategoryHandler) DeleteCategory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Category deleted successfully"})
+}
+
+func (h *CategoryHandler) CreateDefaultCategories(c *gin.Context) {
+	var input struct {
+		UserID int64 `json:"userId" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
+		return
+	}
+
+	err := h.categoryUseCase.CreateDefaultCategories(input.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Default categories created successfully"})
 }
